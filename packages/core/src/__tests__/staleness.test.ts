@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { KnowledgeGraph, GraphNode, GraphEdge } from "../types.js";
 
 vi.mock("child_process", () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 // Import after mocking
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { getChangedFiles, isStale, mergeGraphUpdate } from "../staleness.js";
 
-const mockedExecSync = vi.mocked(execSync);
+const mockedExecFileSync = vi.mocked(execFileSync);
 
 const makeNode = (
   overrides: Partial<GraphNode> & { id: string; name: string },
@@ -55,19 +55,20 @@ beforeEach(() => {
 
 describe("getChangedFiles", () => {
   it("returns changed file list from git diff", () => {
-    mockedExecSync.mockReturnValue("src/index.ts\nsrc/utils.ts\n");
+    mockedExecFileSync.mockReturnValue("src/index.ts\nsrc/utils.ts\n");
 
     const result = getChangedFiles("/project", "abc123");
 
     expect(result).toEqual(["src/index.ts", "src/utils.ts"]);
-    expect(mockedExecSync).toHaveBeenCalledWith(
-      "git diff abc123..HEAD --name-only",
+    expect(mockedExecFileSync).toHaveBeenCalledWith(
+      "git",
+      ["diff", "abc123..HEAD", "--name-only"],
       { cwd: "/project", encoding: "utf-8" },
     );
   });
 
   it("returns empty array when no changes", () => {
-    mockedExecSync.mockReturnValue("");
+    mockedExecFileSync.mockReturnValue("");
 
     const result = getChangedFiles("/project", "abc123");
 
@@ -75,7 +76,7 @@ describe("getChangedFiles", () => {
   });
 
   it("returns empty array on git error", () => {
-    mockedExecSync.mockImplementation(() => {
+    mockedExecFileSync.mockImplementation(() => {
       throw new Error("fatal: bad revision");
     });
 
@@ -87,7 +88,7 @@ describe("getChangedFiles", () => {
 
 describe("isStale", () => {
   it("returns stale when files have changed", () => {
-    mockedExecSync.mockReturnValue("src/index.ts\n");
+    mockedExecFileSync.mockReturnValue("src/index.ts\n");
 
     const result = isStale("/project", "abc123");
 
@@ -98,7 +99,7 @@ describe("isStale", () => {
   });
 
   it("returns not stale when no files changed", () => {
-    mockedExecSync.mockReturnValue("");
+    mockedExecFileSync.mockReturnValue("");
 
     const result = isStale("/project", "abc123");
 
@@ -223,12 +224,12 @@ describe("mergeGraphUpdate", () => {
       ),
     ).toBeDefined();
 
-    // Edge to changed file from unchanged should remain
+    // Edge to changed file from unchanged should be removed (dangling target)
     expect(
       result.edges.find(
         (e) => e.source === "file-c" && e.target === "file-a",
       ),
-    ).toBeDefined();
+    ).toBeUndefined();
 
     // New edge should be added
     expect(

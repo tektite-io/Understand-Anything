@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import type { KnowledgeGraph, GraphNode, GraphEdge } from "./types.js";
 
 export interface StalenessResult {
@@ -15,7 +15,7 @@ export function getChangedFiles(
   lastCommitHash: string,
 ): string[] {
   try {
-    const output = execSync(`git diff ${lastCommitHash}..HEAD --name-only`, {
+    const output = execFileSync('git', ['diff', `${lastCommitHash}..HEAD`, '--name-only'], {
       cwd: projectDir,
       encoding: "utf-8",
     });
@@ -46,7 +46,7 @@ export function isStale(
  * Merge new analysis results into an existing knowledge graph.
  *
  * 1. Remove old nodes belonging to changed files (matched by filePath).
- * 2. Remove old edges where the SOURCE node belongs to a changed file.
+ * 2. Remove old edges where the SOURCE or TARGET node belongs to a changed file.
  * 3. Add new nodes and edges.
  * 4. Update project.gitCommitHash and project.analyzedAt.
  * 5. Return the merged graph.
@@ -72,9 +72,9 @@ export function mergeGraphUpdate(
     (node) => !removedNodeIds.has(node.id),
   );
 
-  // Keep edges whose source node is not in the removed set
+  // Keep edges whose source or target node is not in the removed set
   const retainedEdges = existingGraph.edges.filter(
-    (edge) => !removedNodeIds.has(edge.source),
+    (edge) => !removedNodeIds.has(edge.source) && !removedNodeIds.has(edge.target),
   );
 
   return {
