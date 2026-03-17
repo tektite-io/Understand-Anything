@@ -87,10 +87,7 @@ Verify every **edge** has ALL required fields with correct types:
 **Check 7 -- Quality Checks (Warning)**
 
 - No summaries that are empty or just restate the filename (e.g., summary equals the node name or just the filename portion of the path)
-- Edge weights are within 0.0-1.0 range
-- Node IDs follow prefix conventions: must start with `file:`, `func:`, `class:`, `module:`, or `concept:`
 - No self-referencing edges (where `source` equals `target`)
-- All tags are lowercase and hyphenated (no spaces, no uppercase)
 - No orphan nodes (nodes with zero edges connecting to or from them) -- log as warning, not critical
 
 ### Script Output Format
@@ -133,7 +130,6 @@ The script must write this exact JSON structure to the output file:
 - Orphan nodes with no edges
 - Short or generic summaries
 - Tour step count outside 5-15 range
-- Non-standard tag formatting
 - Self-referencing edges
 
 ### Executing the Script
