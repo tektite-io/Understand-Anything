@@ -32,6 +32,30 @@ Or just ask: "Analyze this codebase and build a knowledge graph"
 
 Restart OpenCode — the plugin re-installs from git automatically.
 
+To pin a specific version:
+
+```json
+{
+  "plugin": ["understand-anything@git+https://github.com/Lum1104/Understand-Anything.git#v1.1.1"]
+}
+```
+
 ## Uninstalling
 
 Remove the plugin line from `opencode.json` and restart.
+
+## Troubleshooting
+
+### Skills not found
+
+1. Verify the plugin line in your `opencode.json`
+2. Check that `~/.cache/opencode/node_modules/understand-anything` exists after restart
+3. Use the `skill` tool to list discovered skills
+
+### Tool mapping
+
+When skills reference Claude Code tools:
+- `TodoWrite` → `todowrite`
+- `Task` with subagents → `@mention` syntax
+- `Skill` tool → OpenCode's native `skill` tool
+- File operations → your native tools
