@@ -111,7 +111,7 @@ The script must write this exact JSON structure to the output file:
 Before writing the script, create its input JSON file. **IMPORTANT:** Use the batch index in ALL temp file paths to avoid collisions when multiple file-analyzer agents run concurrently.
 
 ```bash
-cat > /tmp/ua-file-analyzer-input-<batchIndex>.json << 'ENDJSON'
+cat > $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json << 'ENDJSON'
 {
   "projectRoot": "<project-root>",
   "allProjectFiles": [<full file list from scan>],
@@ -126,9 +126,9 @@ After writing the script, execute it. **Use the batch index in every temp file p
 
 ```bash
 # For Node.js scripts:
-node /tmp/ua-file-extract-<batchIndex>.js /tmp/ua-file-analyzer-input-<batchIndex>.json /tmp/ua-file-extract-results-<batchIndex>.json
+node $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-<batchIndex>.js $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json
 # For Python scripts:
-python3 /tmp/ua-file-extract-<batchIndex>.py /tmp/ua-file-analyzer-input-<batchIndex>.json /tmp/ua-file-extract-results-<batchIndex>.json
+python3 $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-<batchIndex>.py $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json
 ```
 
 If the script exits with a non-zero code, read stderr, diagnose the issue, fix the script, and re-run. You have up to 2 retry attempts.
@@ -137,7 +137,7 @@ If the script exits with a non-zero code, read stderr, diagnose the issue, fix t
 
 ## Phase 2 -- Semantic Analysis
 
-After the script completes, read `/tmp/ua-file-extract-results-<batchIndex>.json`. Use these structured results as the foundation for your analysis. Do NOT re-read the source files unless the script skipped a file or you need to understand a specific code pattern that the script could not capture.
+After the script completes, read `$PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json`. Use these structured results as the foundation for your analysis. Do NOT re-read the source files unless the script skipped a file or you need to understand a specific code pattern that the script could not capture.
 
 For each file in the script's `results` array, produce `GraphNode` and `GraphEdge` objects by combining the script's structural data with your expert judgment.
 

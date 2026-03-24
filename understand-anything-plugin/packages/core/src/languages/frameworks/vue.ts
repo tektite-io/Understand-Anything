@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const vueConfig = {
   id: "vue",
   displayName: "Vue",
-  language: "typescript",
+  languages: ["typescript", "javascript"],
   detectionKeywords: ["vue", "@vue/cli-service", "nuxt", "vite-plugin-vue"],
   manifestFiles: ["package.json"],
   promptSnippetPath: "./frameworks/vue.md",

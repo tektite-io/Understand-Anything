@@ -9,7 +9,7 @@
     {
       "name": "understand-anything",
       "description": "Multi-agent codebase analysis with interactive dashboard, guided tours, and skill commands",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./understand-anything-plugin"
     }
   ]

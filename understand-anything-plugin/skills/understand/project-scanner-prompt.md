@@ -141,7 +141,7 @@ The script must write this exact JSON structure to the output file:
 After writing the script, execute it:
 
 ```bash
-node /tmp/ua-project-scan.js "<project-root>" "/tmp/ua-scan-results.json"
+node $PROJECT_ROOT/.understand-anything/tmp/ua-project-scan.js "<project-root>" "$PROJECT_ROOT/.understand-anything/tmp/ua-scan-results.json"
 ```
 
 (Or the equivalent for bash/Python, depending on which language you chose.)
@@ -152,7 +152,7 @@ If the script exits with a non-zero code, read stderr, diagnose the issue, fix t
 
 ## Phase 2 -- Description and Final Assembly
 
-After the script completes, read `/tmp/ua-scan-results.json`. Do NOT re-run file discovery commands or re-count lines -- trust the script's results entirely.
+After the script completes, read `$PROJECT_ROOT/.understand-anything/tmp/ua-scan-results.json`. Do NOT re-run file discovery commands or re-count lines -- trust the script's results entirely.
 
 **IMPORTANT:** The final output must NOT contain the `scriptCompleted`, `rawDescription`, or `readmeHead` fields. These are intermediate script fields only. Strip them when assembling the final JSON.
 

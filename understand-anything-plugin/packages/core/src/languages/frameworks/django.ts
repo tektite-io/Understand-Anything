@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const djangoConfig = {
   id: "django",
   displayName: "Django",
-  language: "python",
+  languages: ["python"],
   detectionKeywords: [
     "django",
     "djangorestframework",

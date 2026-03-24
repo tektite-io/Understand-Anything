@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const ginConfig = {
   id: "gin",
   displayName: "Gin",
-  language: "go",
+  languages: ["go"],
   detectionKeywords: ["github.com/gin-gonic/gin"],
   manifestFiles: ["go.mod"],
   promptSnippetPath: "./frameworks/gin.md",

@@ -1,6 +1,7 @@
 import dagre from "@dagrejs/dagre";
 import type { Node, Edge } from "@xyflow/react";
 import type { KnowledgeGraph } from "@understand-anything/core/types";
+import type { LayoutMessage, LayoutResult } from "./layout.worker";
 
 export const NODE_WIDTH = 280;
 export const NODE_HEIGHT = 120;
@@ -15,6 +16,9 @@ export const LANE_GAP = 40;
 export const LANE_PADDING = 30;
 export const LANE_HEADER_HEIGHT = 40;
 
+/**
+ * Synchronous dagre layout — used for small graphs.
+ */
 export function applyDagreLayout(
   nodes: Node[],
   edges: Edge[],
@@ -65,10 +69,86 @@ export function applyDagreLayout(
   return { nodes: layoutedNodes, edges };
 }
 
+// ── Async layout via Web Worker ────────────────────────────────────────
+
+let _worker: Worker | null = null;
+let _nextRequestId = 0;
+let _latestRequestId = -1;
+const _pending = new Map<
+  number,
+  {
+    nodes: Node[];
+    edges: Edge[];
+    resolve: (v: { nodes: Node[]; edges: Edge[] }) => void;
+    reject: (reason?: unknown) => void;
+  }
+>();
+
+function getWorker(): Worker {
+  if (!_worker) {
+    _worker = new Worker(
+      new URL("./layout.worker.ts", import.meta.url),
+      { type: "module" },
+    );
+
+    _worker.onmessage = (e: MessageEvent<LayoutResult>) => {
+      const { requestId, positions } = e.data;
+      const entry = _pending.get(requestId);
+      _pending.delete(requestId);
+
+      // Discard stale results — only honour the latest request.
+      if (!entry || requestId !== _latestRequestId) return;
+
+      const layoutedNodes = entry.nodes.map((node) => ({
+        ...node,
+        position: positions[node.id] ?? { x: 0, y: 0 },
+      }));
+
+      entry.resolve({ nodes: layoutedNodes, edges: entry.edges });
+    };
+
+    _worker.onerror = (err: ErrorEvent) => {
+      for (const [, entry] of _pending) {
+        entry.reject(err);
+      }
+      _pending.clear();
+    };
+  }
+  return _worker;
+}
+
+/**
+ * Async dagre layout via Web Worker — used for large graphs.
+ * Keeps the main thread responsive while dagre computes positions.
+ */
+export function applyDagreLayoutAsync(
+  nodes: Node[],
+  edges: Edge[],
+  direction: "TB" | "LR" = "TB",
+): Promise<{ nodes: Node[]; edges: Edge[] }> {
+  return new Promise((resolve, reject) => {
+    const worker = getWorker();
+    const requestId = _nextRequestId++;
+    _latestRequestId = requestId;
+
+    _pending.set(requestId, { nodes, edges, resolve, reject });
+
+    const msg: LayoutMessage = {
+      requestId,
+      nodes: nodes.map((n) => ({ id: n.id, width: NODE_WIDTH, height: NODE_HEIGHT })),
+      edges: edges.map((e) => ({ source: e.source, target: e.target })),
+      direction,
+    };
+
+    worker.postMessage(msg);
+  });
+}
+
+// ── Swim-lane layout ───────────────────────────────────────────────────
+
 /**
  * Preferred order of layers for the swim-lane flow view.
  * Reflects a typical request lifecycle: entry → middleware → logic → data → external.
- * Layers not in this list are appended at the end.
  */
 const LAYER_FLOW_ORDER = [
   "API Layer",
@@ -89,11 +169,8 @@ function getLayerSortIndex(layerName: string): number {
 }
 
 export interface SwimLaneResult {
-  /** All nodes: lane background groups + file nodes positioned inside them */
   nodes: Node[];
-  /** Cross-lane and intra-lane edges */
   edges: Edge[];
-  /** Ordered layer info for reference */
   lanes: Array<{ layerId: string; layerName: string; columnIndex: number }>;
 }
 
@@ -107,12 +184,10 @@ export function applySwimLaneLayout(
   fileNodes: Node[],
   allEdges: Edge[],
 ): SwimLaneResult {
-  // Sort layers by flow order
   const sortedLayers = [...graph.layers].sort(
     (a, b) => getLayerSortIndex(a.name) - getLayerSortIndex(b.name),
   );
 
-  // Build nodeId → layer mapping
   const nodeToLayerId = new Map<string, string>();
   for (const layer of sortedLayers) {
     for (const nid of layer.nodeIds) {
@@ -120,7 +195,6 @@ export function applySwimLaneLayout(
     }
   }
 
-  // Group file nodes by layer
   const nodesByLayer = new Map<string, Node[]>();
   for (const layer of sortedLayers) {
     nodesByLayer.set(layer.id, []);
@@ -132,8 +206,6 @@ export function applySwimLaneLayout(
     }
   }
 
-  // For each lane, use dagre to compute y-positions of its nodes
-  // (treating the lane as a vertical sub-graph)
   const laneHeights = new Map<string, number>();
 
   for (const [layerId, nodes] of nodesByLayer) {
@@ -144,20 +216,13 @@ export function applySwimLaneLayout(
 
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    g.setGraph({
-      rankdir: "TB",
-      nodesep: 20,
-      ranksep: 40,
-      marginx: 0,
-      marginy: 0,
-    });
+    g.setGraph({ rankdir: "TB", nodesep: 20, ranksep: 40, marginx: 0, marginy: 0 });
 
     const laneNodeIds = new Set(nodes.map((n) => n.id));
     for (const node of nodes) {
       g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
     }
 
-    // Only include edges within this lane for vertical ordering
     for (const edge of allEdges) {
       if (laneNodeIds.has(edge.source) && laneNodeIds.has(edge.target)) {
         g.setEdge(edge.source, edge.target);
@@ -166,12 +231,10 @@ export function applySwimLaneLayout(
 
     dagre.layout(g);
 
-    // Read dagre's y-positions and assign relative positions within the lane
     let maxY = 0;
     for (const node of nodes) {
       const pos = g.node(node.id);
       if (pos) {
-        // Store the y position in the node's data for later use
         (node as Node & { _laneY: number })._laneY = pos.y - NODE_HEIGHT / 2;
         maxY = Math.max(maxY, pos.y + NODE_HEIGHT / 2);
       }
@@ -180,13 +243,8 @@ export function applySwimLaneLayout(
     laneHeights.set(layerId, LANE_HEADER_HEIGHT + maxY + LANE_PADDING * 2);
   }
 
-  // Find the tallest lane so all lanes are the same height
-  const maxLaneHeight = Math.max(
-    200,
-    ...Array.from(laneHeights.values()),
-  );
+  const maxLaneHeight = Math.max(200, ...Array.from(laneHeights.values()));
 
-  // Build lane group nodes and position file nodes as children
   const resultNodes: Node[] = [];
   const lanes: SwimLaneResult["lanes"] = [];
 
@@ -194,13 +252,8 @@ export function applySwimLaneLayout(
     const laneX = colIdx * (LANE_WIDTH + LANE_GAP);
     const laneId = `lane:${layer.id}`;
 
-    lanes.push({
-      layerId: layer.id,
-      layerName: layer.name,
-      columnIndex: colIdx,
-    });
+    lanes.push({ layerId: layer.id, layerName: layer.name, columnIndex: colIdx });
 
-    // Lane background group node
     resultNodes.push({
       id: laneId,
       type: "group",
@@ -216,7 +269,6 @@ export function applySwimLaneLayout(
       },
     });
 
-    // Position file nodes within this lane
     const nodes = nodesByLayer.get(layer.id) ?? [];
     for (const node of nodes) {
       const laneY = (node as Node & { _laneY?: number })._laneY ?? 0;
@@ -229,7 +281,6 @@ export function applySwimLaneLayout(
           y: LANE_HEADER_HEIGHT + LANE_PADDING + laneY,
         },
       });
-      // Clean up temp property
       delete (node as Node & { _laneY?: number })._laneY;
     }
   });

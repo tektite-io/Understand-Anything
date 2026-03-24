@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 
@@ -42,7 +43,7 @@ export interface CustomNodeData extends Record<string, unknown> {
 
 export type CustomFlowNode = Node<CustomNodeData, "custom">;
 
-export default function CustomNode({
+function CustomNodeComponent({
   id,
   data,
 }: NodeProps<CustomFlowNode>) {
@@ -88,8 +89,7 @@ export default function CustomNode({
 
   return (
     <div
-      className={`relative rounded-lg bg-elevated border border-border-subtle ${extraClass} min-w-[180px] max-w-[220px] overflow-hidden transition-all duration-200 cursor-pointer`}
-      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+      className={`relative rounded-lg bg-elevated border border-border-subtle ${extraClass} min-w-[180px] max-w-[220px] overflow-hidden transition-[box-shadow,outline,opacity,filter] duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.3)]`}
       onClick={() => data.onNodeClick?.(id)}
     >
       {/* Left color bar */}
@@ -131,3 +131,6 @@ export default function CustomNode({
     </div>
   );
 }
+
+const CustomNode = memo(CustomNodeComponent);
+export default CustomNode;

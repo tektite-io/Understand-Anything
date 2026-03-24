@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a>
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.tr-TR.md">Türkçe</a>
 </p>
 
 <p align="center">
@@ -121,11 +121,9 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 ### OpenCode
 
-添加到你的 `opencode.json` 文件:
-```json
-{
-  "plugin": ["understand-anything@git+https://github.com/Lum1104/Understand-Anything.git"]
-}
+告诉 OpenCode:
+```
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.opencode/INSTALL.md
 ```
 
 ### OpenClaw
@@ -139,15 +137,39 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 克隆此仓库后，Cursor 会自动通过 `.cursor-plugin/plugin.json`文件发现插件。无需手动安装 — 只需克隆并在 Cursor 中打开即可。
 
+### Antigravity
+
+告诉 Antigravity:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.antigravity/INSTALL.md
+```
+
+### Gemini CLI
+
+告诉 Gemini CLI:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.gemini/INSTALL.md
+```
+
+### Pi Agent
+
+告诉 Pi Agent:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Understand-Anything/refs/heads/main/.pi/INSTALL.md
+```
+
 ### 多平台兼容
 
 | 平台 | 状态 | 安装方式 |
 |----------|--------|----------------|
 | Claude Code | ✅ Native | 插件市场 |
 | Codex | ✅ 支持 | AI驱动安装 |
-| OpenCode | ✅ 支持 | 插件配置 |
+| OpenCode | ✅ 支持 | AI驱动安装 |
 | OpenClaw | ✅ 支持 | AI驱动安装 |
 | Cursor | ✅ 支持 | 自动发现 |
+| Antigravity | ✅ 支持 | AI驱动安装 |
+| Gemini CLI | ✅ 支持 | AI驱动安装 |
+| Pi Agent | ✅ 支持 | AI驱动安装 |
 
 ---
 

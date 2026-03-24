@@ -12,11 +12,17 @@ export class FrameworkRegistry {
 
   register(config: FrameworkConfig): void {
     const parsed = FrameworkConfigSchema.parse(config);
+
+    // Prevent duplicate registration
+    if (this.byId.has(parsed.id)) return;
+
     this.byId.set(parsed.id, parsed);
 
-    const existing = this.byLanguage.get(parsed.language) ?? [];
-    existing.push(parsed);
-    this.byLanguage.set(parsed.language, existing);
+    for (const lang of parsed.languages) {
+      const existing = this.byLanguage.get(lang) ?? [];
+      existing.push(parsed);
+      this.byLanguage.set(lang, existing);
+    }
   }
 
   getById(id: string): FrameworkConfig | null {
@@ -24,7 +30,7 @@ export class FrameworkRegistry {
   }
 
   getForLanguage(langId: string): FrameworkConfig[] {
-    return this.byLanguage.get(langId) ?? [];
+    return [...(this.byLanguage.get(langId) ?? [])];
   }
 
   getAllFrameworks(): FrameworkConfig[] {

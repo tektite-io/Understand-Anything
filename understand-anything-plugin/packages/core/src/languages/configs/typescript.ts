@@ -7,24 +7,6 @@ export const typescriptConfig = {
   treeSitter: {
     wasmPackage: "tree-sitter-typescript",
     wasmFile: "tree-sitter-typescript.wasm",
-    nodeTypes: {
-      function: [
-        "function_declaration",
-        "arrow_function",
-        "function_expression",
-        "method_definition",
-      ],
-      class: ["class_declaration"],
-      import: ["import_statement"],
-      export: ["export_statement"],
-      call: ["call_expression"],
-      string: ["string", "string_fragment"],
-      parameter: [
-        "formal_parameters",
-        "required_parameter",
-        "optional_parameter",
-      ],
-    },
   },
   concepts: [
     "generics",

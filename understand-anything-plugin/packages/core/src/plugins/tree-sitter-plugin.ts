@@ -201,17 +201,13 @@ export class TreeSitterPlugin implements AnalyzerPlugin {
     this.languages = langs;
   }
 
-  private languageKeyFromPath(filePath: string): string {
+  private languageKeyFromPath(filePath: string): string | null {
     const ext = extname(filePath).toLowerCase();
 
     // Special case: .tsx needs its own grammar
     if (ext === ".tsx") return "tsx";
 
-    const lang = this._extensionToLang.get(ext);
-    if (!lang) {
-      throw new Error(`Unsupported file extension: ${ext}`);
-    }
-    return lang;
+    return this._extensionToLang.get(ext) ?? null;
   }
 
   /**
@@ -304,6 +300,7 @@ export class TreeSitterPlugin implements AnalyzerPlugin {
       );
     }
     const langKey = this.languageKeyFromPath(filePath);
+    if (!langKey) return null;
     const lang = this._languages.get(langKey);
     if (!lang) {
       // Language grammar not loaded — graceful degradation

@@ -20,29 +20,19 @@ Analyze the current codebase and produce a `knowledge-graph.json` file in `.unde
 
 Determine whether to run a full analysis or incremental update.
 
-1. **STOP and ask the user where temporary scripts and intermediate files should be written.** You MUST wait for the user's response before proceeding to step 2 or any other step. Do NOT read prompt templates, launch subagents, or begin any analysis until this question is answered.
-
-   Ask the user:
-   > Where should I write temporary scripts and intermediate files during analysis?
-   > 1. **Project directory** (recommended): `.understand-anything/tmp/` — stays within the project
-   > 2. **System temp**: `/tmp/` — may require permissions outside the project
-
-   After the user responds, store the chosen path as `$TMP_DIR`. Create it: `mkdir -p $TMP_DIR`.
-
-   All subagent prompts reference `$TMP_DIR` for script files and intermediate JSON. When dispatching subagents, replace any `/tmp/ua-` paths in the prompt templates with `$TMP_DIR/ua-` so scripts and results are written to the user's chosen location.
-
-2. Set `PROJECT_ROOT` to the current working directory.
-3. Get the current git commit hash:
+1. Set `PROJECT_ROOT` to the current working directory.
+2. Get the current git commit hash:
    ```bash
    git rev-parse HEAD
    ```
-4. Create the intermediate output directory:
+3. Create the intermediate and temp output directories:
    ```bash
    mkdir -p $PROJECT_ROOT/.understand-anything/intermediate
+   mkdir -p $PROJECT_ROOT/.understand-anything/tmp
    ```
-5. Check if `$PROJECT_ROOT/.understand-anything/knowledge-graph.json` exists. If it does, read it.
-6. Check if `$PROJECT_ROOT/.understand-anything/meta.json` exists. If it does, read it to get `gitCommitHash`.
-7. **Decision logic:**
+4. Check if `$PROJECT_ROOT/.understand-anything/knowledge-graph.json` exists. If it does, read it.
+5. Check if `$PROJECT_ROOT/.understand-anything/meta.json` exists. If it does, read it to get `gitCommitHash`.
+6. **Decision logic:**
 
    | Condition | Action |
    |---|---|
@@ -57,7 +47,7 @@ Determine whether to run a full analysis or incremental update.
    ```
    If this returns no files, report "Graph is up to date" and STOP.
 
-8. **Collect project context for subagent injection:**
+7. **Collect project context for subagent injection:**
    - Read `README.md` (or `README.rst`, `readme.md`) from `$PROJECT_ROOT` if it exists. Store as `$README_CONTENT` (first 3000 characters).
    - Read the primary package manifest (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `pom.xml`) if it exists. Store as `$MANIFEST_CONTENT`.
    - Capture the top-level directory tree:
@@ -113,8 +103,8 @@ For each batch, dispatch a subagent using the prompt template at `./file-analyze
 
 **Build the combined prompt template:**
 1. Read the base template at `./file-analyzer-prompt.md`.
-2. **Language context injection:** For each language detected in Phase 1 (e.g., `python`), read the file at `./languages/<language-id>.md` (e.g., `./languages/python.md`) and append its content after the base template under a `## Language Context` header. These files are in the `languages/` subdirectory next to this SKILL.md file. Use `ls ./languages/` to discover available language files if needed.
-3. **Framework addendum injection:** For each framework detected in Phase 1 (e.g., `Django`), read the file at `./frameworks/<framework-id-lowercase>.md` (e.g., `./frameworks/django.md`) and append its full content after the language context. These files are in the `frameworks/` subdirectory next to this SKILL.md file. Use `ls ./frameworks/` to discover available framework files if needed.
+2. **Language context injection:** For each language detected in Phase 1 (e.g., `python`), read the file at `./languages/<language-id>.md` (e.g., `./languages/python.md`) and append its content after the base template under a `## Language Context` header. If the file does not exist for a detected language, skip it silently and continue. These files are in the `languages/` subdirectory next to this SKILL.md file. Use `ls ./languages/` to discover available language files if needed.
+3. **Framework addendum injection:** For each framework detected in Phase 1 (e.g., `Django`), read the file at `./frameworks/<framework-id-lowercase>.md` (e.g., `./frameworks/django.md`) and append its full content after the language context. If the file does not exist for a detected framework, skip it silently and continue. These files are in the `frameworks/` subdirectory next to this SKILL.md file. Use `ls ./frameworks/` to discover available framework files if needed.
 
 Then for each batch pass the combined template content as the subagent's prompt, appending the following additional context:
 
@@ -172,8 +162,8 @@ Merge all file-analyzer results into a single set of nodes and edges. Then perfo
 
 **Build the combined prompt template:**
 1. Read the base template at `./architecture-analyzer-prompt.md`.
-2. **Language context injection:** For each language detected in Phase 1 (e.g., `python`), read the file at `./languages/<language-id>.md` (e.g., `./languages/python.md`) and append its content after the base template under a `## Language Context` header. These files are in the `languages/` subdirectory next to this SKILL.md file.
-3. **Framework addendum injection:** For each framework detected in Phase 1 (e.g., `Django`), read the file at `./frameworks/<framework-id-lowercase>.md` (e.g., `./frameworks/django.md`) and append its full content after the language context. These files are in the `frameworks/` subdirectory next to this SKILL.md file.
+2. **Language context injection:** For each language detected in Phase 1 (e.g., `python`), read the file at `./languages/<language-id>.md` (e.g., `./languages/python.md`) and append its content after the base template under a `## Language Context` header. If the file does not exist for a detected language, skip it silently and continue. These files are in the `languages/` subdirectory next to this SKILL.md file.
+3. **Framework addendum injection:** For each framework detected in Phase 1 (e.g., `Django`), read the file at `./frameworks/<framework-id-lowercase>.md` (e.g., `./frameworks/django.md`) and append its full content after the language context. If the file does not exist for a detected framework, skip it silently and continue. These files are in the `frameworks/` subdirectory next to this SKILL.md file.
 
 Pass the combined content as the subagent's prompt, appending the following additional context:
 
@@ -205,13 +195,15 @@ Pass these parameters in the dispatch prompt:
 > [list of edges with type "imports"]
 > ```
 
-After the subagent completes, read `$PROJECT_ROOT/.understand-anything/intermediate/layers.json` to get the layer assignments.
+After the subagent completes, read `$PROJECT_ROOT/.understand-anything/intermediate/layers.json` and normalize it into a final `layers` array. Apply these steps **in order**:
 
-`layers.json` may be either:
-- a top-level JSON array of layer objects, or
-- an envelope object such as `{ "layers": [...] }` from the current prompt/template output
+1. **Unwrap envelope:** If the file contains `{ "layers": [...] }` instead of a plain array, extract the inner array. (The prompt requests a plain array, but LLMs may still produce an envelope.)
+2. **Rename legacy fields:** If any layer object has a `nodes` field instead of `nodeIds`, rename `nodes` → `nodeIds`. If `nodes` entries are objects with an `id` field rather than plain strings, extract just the `id` values into `nodeIds`.
+3. **Synthesize missing IDs:** If any layer is missing an `id`, generate one as `layer:<kebab-case-name>`.
+4. **Convert file paths:** If `nodeIds` entries are raw file paths (not prefixed with `file:`), convert them to `file:<relative-path>`.
+5. **Drop dangling refs:** Remove any `nodeIds` entries that do not exist in the merged node set.
 
-Normalize either form into a final top-level `layers` array before assembling the graph. Each final saved layer object MUST match this exact shape:
+Each element of the final `layers` array MUST have this shape:
 
 ```json
 [
@@ -224,13 +216,7 @@ Normalize either form into a final top-level `layers` array before assembling th
 ]
 ```
 
-Rules:
-- `id` is required and must be unique
-- `nodeIds` is required and must contain graph node IDs, not raw file paths
-- If the intermediate output is an envelope object, unwrap its `layers` array before any other normalization
-- If the subagent returns file paths, convert them to file node IDs before assembling the final graph
-- Drop any `nodeIds` that do not exist in the merged node set
-- Do not use a `nodes` field in the final saved layer objects
+All four fields (`id`, `name`, `description`, `nodeIds`) are required.
 
 **For incremental updates:** Always re-run architecture analysis on the full merged node set, since layer assignments may shift when files change.
 
@@ -283,13 +269,15 @@ Pass these parameters in the dispatch prompt:
 > [imports and calls edges]
 > ```
 
-After the subagent completes, read `$PROJECT_ROOT/.understand-anything/intermediate/tour.json` to get the tour steps.
+After the subagent completes, read `$PROJECT_ROOT/.understand-anything/intermediate/tour.json` and normalize it into a final `tour` array. Apply these steps **in order**:
 
-`tour.json` may be either:
-- a top-level JSON array of tour step objects, or
-- an envelope object such as `{ "steps": [...] }` from the current prompt/template output
+1. **Unwrap envelope:** If the file contains `{ "steps": [...] }` instead of a plain array, extract the inner array. (The prompt requests a plain array, but LLMs may still produce an envelope.)
+2. **Rename legacy fields:** If any step has `nodesToInspect` instead of `nodeIds`, rename it → `nodeIds`. If any step has `whyItMatters` instead of `description`, rename it → `description`.
+3. **Convert file paths:** If `nodeIds` entries are raw file paths, convert them to `file:<relative-path>`.
+4. **Drop dangling refs:** Remove any `nodeIds` entries that do not exist in the merged node set.
+5. **Sort** by `order` before saving.
 
-Normalize either form into a final top-level `tour` array before assembling the graph. Each final saved tour step object MUST match this exact shape:
+Each element of the final `tour` array MUST have this shape:
 
 ```json
 [
@@ -302,31 +290,7 @@ Normalize either form into a final top-level `tour` array before assembling the 
 ]
 ```
 
-Rules:
-- If the intermediate output is an envelope object, unwrap its `steps` array before any other normalization
-- `description` is required; do not use `whyItMatters` in the final saved tour steps
-- `nodeIds` is required; do not use `nodesToInspect` in the final saved tour steps
-- `nodeIds` must reference existing graph node IDs
-- Preserve optional `languageLesson` when present
-- Sort by `order` before saving
-
----
-
-## Phase 5.5 — NORMALIZE
-
-Before assembling the final graph:
-
-- Unwrap legacy or prompt-shaped envelopes before field renaming:
-  - `{ "layers": [...] }` -> use the contained array as the working `layers` value
-  - `{ "steps": [...] }` -> use the contained array as the working `tour` value
-- Convert any layer `nodes` field to `nodeIds`
-- Convert any tour `nodesToInspect` field to `nodeIds`
-- Convert any tour `whyItMatters` field to `description`
-- If layers or tour reference file paths, map them to file node IDs using the `file:<relative-path>` convention
-- Synthesize missing layer IDs as `layer:<kebab-case-name>`
-- Drop unresolved layer and tour node references
-- Ensure the final `layers` value is an array of `{ id, name, description, nodeIds }`
-- Ensure the final `tour` value is an array of `{ order, title, description, nodeIds }`, preserving optional `languageLesson`
+Required fields: `order`, `title`, `description`, `nodeIds`. Preserve optional `languageLesson` when present.
 
 ---
 
@@ -416,7 +380,7 @@ Pass these parameters in the dispatch prompt:
 3. Clean up intermediate files:
    ```bash
    rm -rf $PROJECT_ROOT/.understand-anything/intermediate
-   rm -rf $TMP_DIR
+   rm -rf $PROJECT_ROOT/.understand-anything/tmp
    ```
 
 4. Report a summary to the user containing:

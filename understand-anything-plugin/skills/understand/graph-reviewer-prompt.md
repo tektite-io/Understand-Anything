@@ -134,7 +134,7 @@ The script must write this exact JSON structure to the output file:
 After writing the script, execute it:
 
 ```bash
-node /tmp/ua-graph-validate.js "<graph-file-path>" "/tmp/ua-review-results.json"
+node $PROJECT_ROOT/.understand-anything/tmp/ua-graph-validate.js "<graph-file-path>" "$PROJECT_ROOT/.understand-anything/tmp/ua-review-results.json"
 ```
 
 If the script exits with a non-zero code, read stderr, diagnose the issue, fix the script, and re-run. You have up to 2 retry attempts.
@@ -143,7 +143,7 @@ If the script exits with a non-zero code, read stderr, diagnose the issue, fix t
 
 ## Phase 2 -- Review and Decision
 
-After the script completes, read `/tmp/ua-review-results.json`. Do NOT re-read the original graph file -- trust the script's results entirely.
+After the script completes, read `$PROJECT_ROOT/.understand-anything/tmp/ua-review-results.json`. Do NOT re-read the original graph file -- trust the script's results entirely.
 
 Review the `issues` and `warnings` arrays and render your decision:
 

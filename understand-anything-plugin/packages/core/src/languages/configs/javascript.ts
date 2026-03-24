@@ -7,20 +7,6 @@ export const javascriptConfig = {
   treeSitter: {
     wasmPackage: "tree-sitter-javascript",
     wasmFile: "tree-sitter-javascript.wasm",
-    nodeTypes: {
-      function: [
-        "function_declaration",
-        "arrow_function",
-        "function_expression",
-        "method_definition",
-      ],
-      class: ["class_declaration"],
-      import: ["import_statement"],
-      export: ["export_statement"],
-      call: ["call_expression"],
-      string: ["string", "string_fragment"],
-      parameter: ["formal_parameters"],
-    },
   },
   concepts: [
     "closures",

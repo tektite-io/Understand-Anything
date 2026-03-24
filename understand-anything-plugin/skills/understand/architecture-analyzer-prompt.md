@@ -164,7 +164,7 @@ For each pair of groups with imports between them, determine the dominant direct
 Before writing the script, create its input JSON file:
 
 ```bash
-cat > /tmp/ua-arch-input.json << 'ENDJSON'
+cat > $PROJECT_ROOT/.understand-anything/tmp/ua-arch-input.json << 'ENDJSON'
 {
   "fileNodes": [<file nodes from prompt>],
   "importEdges": [<import edges from prompt>]
@@ -177,7 +177,7 @@ ENDJSON
 After writing the script, execute it:
 
 ```bash
-node /tmp/ua-arch-analyze.js /tmp/ua-arch-input.json /tmp/ua-arch-results.json
+node $PROJECT_ROOT/.understand-anything/tmp/ua-arch-analyze.js $PROJECT_ROOT/.understand-anything/tmp/ua-arch-input.json $PROJECT_ROOT/.understand-anything/tmp/ua-arch-results.json
 ```
 
 If the script exits with a non-zero code, read stderr, diagnose the issue, fix the script, and re-run. You have up to 2 retry attempts.
@@ -186,7 +186,7 @@ If the script exits with a non-zero code, read stderr, diagnose the issue, fix t
 
 ## Phase 2 -- Semantic Layer Assignment
 
-After the script completes, read `/tmp/ua-arch-results.json`. Use the structural analysis as the primary input for your layer decisions. Do NOT re-read source files or re-analyze imports -- trust the script's results entirely.
+After the script completes, read `$PROJECT_ROOT/.understand-anything/tmp/ua-arch-results.json`. Use the structural analysis as the primary input for your layer decisions. Do NOT re-read source files or re-analyze imports -- trust the script's results entirely.
 
 ### Step 1 -- Evaluate Directory Groups as Layer Candidates
 

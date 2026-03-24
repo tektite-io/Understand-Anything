@@ -3,8 +3,8 @@ import type { FrameworkConfig } from "../types.js";
 export const expressConfig = {
   id: "express",
   displayName: "Express",
-  language: "javascript",
-  detectionKeywords: ["express", "express-validator", "cors", "body-parser"],
+  languages: ["javascript", "typescript"],
+  detectionKeywords: ["\"express\":", "express-validator", "express-session"],
   manifestFiles: ["package.json"],
   promptSnippetPath: "./frameworks/express.md",
   entryPoints: [

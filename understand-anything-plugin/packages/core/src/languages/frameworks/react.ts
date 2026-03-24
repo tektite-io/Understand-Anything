@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const reactConfig = {
   id: "react",
   displayName: "React",
-  language: "typescript",
+  languages: ["typescript", "javascript"],
   detectionKeywords: ["react", "react-dom", "@types/react"],
   manifestFiles: ["package.json"],
   promptSnippetPath: "./frameworks/react.md",

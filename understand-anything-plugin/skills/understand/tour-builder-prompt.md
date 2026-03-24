@@ -132,7 +132,7 @@ Create a lookup of each node ID to its `summary`, `type`, `tags` (default to emp
 Before writing the script, create its input JSON file:
 
 ```bash
-cat > /tmp/ua-tour-input.json << 'ENDJSON'
+cat > $PROJECT_ROOT/.understand-anything/tmp/ua-tour-input.json << 'ENDJSON'
 {
   "nodes": [<nodes from prompt>],
   "edges": [<edges from prompt>],
@@ -146,7 +146,7 @@ ENDJSON
 After writing the script, execute it:
 
 ```bash
-node /tmp/ua-tour-analyze.js /tmp/ua-tour-input.json /tmp/ua-tour-results.json
+node $PROJECT_ROOT/.understand-anything/tmp/ua-tour-analyze.js $PROJECT_ROOT/.understand-anything/tmp/ua-tour-input.json $PROJECT_ROOT/.understand-anything/tmp/ua-tour-results.json
 ```
 
 If the script exits with a non-zero code, read stderr, diagnose the issue, fix the script, and re-run. You have up to 2 retry attempts.
@@ -155,7 +155,7 @@ If the script exits with a non-zero code, read stderr, diagnose the issue, fix t
 
 ## Phase 2 -- Pedagogical Tour Design
 
-After the script completes, read `/tmp/ua-tour-results.json`. Use the structural analysis as your primary guide for designing the tour. Do NOT re-read source files or re-analyze the graph -- trust the script's results entirely.
+After the script completes, read `$PROJECT_ROOT/.understand-anything/tmp/ua-tour-results.json`. Use the structural analysis as your primary guide for designing the tour. Do NOT re-read source files or re-analyze the graph -- trust the script's results entirely.
 
 ### Step 1 -- Choose the Starting Point
 

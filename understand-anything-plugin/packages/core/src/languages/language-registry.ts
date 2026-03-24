@@ -25,7 +25,7 @@ export class LanguageRegistry {
   }
 
   getByExtension(ext: string): LanguageConfig | null {
-    const key = ext.startsWith(".") ? ext : `.${ext}`;
+    const key = (ext.startsWith(".") ? ext : `.${ext}`).toLowerCase();
     return this.byExtension.get(key) ?? null;
   }
 

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
+  ReactFlowProvider,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -42,6 +43,62 @@ const nodeTypes = {
   portal: PortalNode,
 };
 
+// ── Helper components that must live inside <ReactFlow> ────────────────
+
+/** Pans/zooms to tour-highlighted nodes. */
+function TourFitView() {
+  const tourHighlightedNodeIds = useDashboardStore((s) => s.tourHighlightedNodeIds);
+  const { fitView } = useReactFlow();
+  const prevRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    const changed =
+      tourHighlightedNodeIds.length > 0 &&
+      (tourHighlightedNodeIds.length !== prev.length ||
+        tourHighlightedNodeIds.some((id, i) => id !== prev[i]));
+    prevRef.current = tourHighlightedNodeIds;
+
+    if (changed) {
+      requestAnimationFrame(() => {
+        fitView({
+          nodes: tourHighlightedNodeIds.map((id) => ({ id })),
+          duration: 500,
+          padding: 0.3,
+          maxZoom: 1.2,
+          minZoom: 0.01,
+        });
+      });
+    }
+  }, [tourHighlightedNodeIds, fitView]);
+
+  return null;
+}
+
+/** Centers the graph on the selected node (e.g. from search). */
+function SelectedNodeFitView() {
+  const selectedNodeId = useDashboardStore((s) => s.selectedNodeId);
+  const { fitView } = useReactFlow();
+  const prevRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (selectedNodeId && selectedNodeId !== prevRef.current) {
+      requestAnimationFrame(() => {
+        fitView({
+          nodes: [{ id: selectedNodeId }],
+          duration: 500,
+          padding: 0.3,
+          maxZoom: 1.2,
+          minZoom: 0.01,
+        });
+      });
+    }
+    prevRef.current = selectedNodeId;
+  }, [selectedNodeId, fitView]);
+
+  return null;
+}
+
 // ── Overview level: layers as cluster nodes ────────────────────────────
 
 function useOverviewGraph() {
@@ -73,19 +130,8 @@ function useOverviewGraph() {
       }
     }
 
-    // Build tour highlight set for layers
-    const tourLayerIds = new Set<string>();
-    if (tourHighlightedNodeIds.length > 0) {
-      for (const layer of layers) {
-        if (layer.nodeIds.some((nid) => tourHighlightedNodeIds.includes(nid))) {
-          tourLayerIds.add(layer.id);
-        }
-      }
-    }
-
     // Create cluster nodes
     const clusterNodes: LayerClusterFlowNode[] = layers.map((layer, i) => {
-      // Compute aggregate complexity from member nodes
       const memberNodes = graph.nodes.filter((n) => layer.nodeIds.includes(n.id));
       const complexCounts = { simple: 0, moderate: 0, complex: 0 };
       for (const n of memberNodes) {
@@ -129,7 +175,6 @@ function useOverviewGraph() {
       labelStyle: { fill: "#a39787", fontSize: 11, fontWeight: 600 },
     }));
 
-    // Layout with cluster dimensions
     const dims = new Map<string, { width: number; height: number }>();
     for (const n of clusterNodes) {
       dims.set(n.id, { width: LAYER_CLUSTER_WIDTH, height: LAYER_CLUSTER_HEIGHT });
@@ -171,12 +216,10 @@ function useLayerDetailGraph() {
 
     const layerNodeIds = new Set(activeLayer.nodeIds);
 
-    // Filter to file nodes in this layer
     let filteredGraphNodes = graph.nodes.filter(
       (n) => layerNodeIds.has(n.id) && n.type === "file",
     );
 
-    // Persona filtering
     if (persona === "non-technical") {
       filteredGraphNodes = filteredGraphNodes.filter(
         (n) => n.type === "concept" || n.type === "module" || n.type === "file",
@@ -185,7 +228,6 @@ function useLayerDetailGraph() {
 
     let filteredNodeIds = new Set(filteredGraphNodes.map((n) => n.id));
 
-    // Intra-layer edges only
     let filteredGraphEdges = graph.edges.filter(
       (e) => filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target),
     );
@@ -216,7 +258,6 @@ function useLayerDetailGraph() {
       neighborNodeIds.add(selectedNodeId);
     }
 
-    // Build file flow nodes
     const flowNodes: CustomFlowNode[] = filteredGraphNodes.map((node) => {
       const matchResult = searchResults.find((r) => r.nodeId === node.id);
       const hasSelection = !!selectedNodeId;
@@ -249,7 +290,6 @@ function useLayerDetailGraph() {
       };
     });
 
-    // Build diff-aware edges
     const diffNodeIds = diffMode
       ? new Set([...changedNodeIds, ...affectedNodeIds])
       : new Set<string>();
@@ -323,7 +363,6 @@ function useLayerDetailGraph() {
       },
     }));
 
-    // Connect portal nodes to the file nodes that have cross-layer edges
     const portalEdges: Edge[] = [];
     let portalEdgeIdx = flowEdges.length;
     for (const portal of portals) {
@@ -345,7 +384,6 @@ function useLayerDetailGraph() {
       }
     }
 
-    // Layout with mixed dimensions
     const allFlowNodes: Node[] = [
       ...(flowNodes as unknown as Node[]),
       ...(portalNodes as unknown as Node[]),
@@ -403,7 +441,6 @@ function useFlowViewGraph() {
     if (!graph || graph.layers.length === 0)
       return { nodes: [] as Node[], edges: [] as Edge[] };
 
-    // Build all file nodes across all layers
     const allLayerNodeIds = new Set(
       graph.layers.flatMap((l) => l.nodeIds),
     );
@@ -412,7 +449,6 @@ function useFlowViewGraph() {
       (n) => n.type === "file" && allLayerNodeIds.has(n.id),
     );
 
-    // Neighbor set for selection highlighting
     const fileNodeIds = new Set(fileGraphNodes.map((n) => n.id));
     const neighborNodeIds = new Set<string>();
     if (selectedNodeId) {
@@ -461,7 +497,6 @@ function useFlowViewGraph() {
       };
     });
 
-    // Build cross-lane edges (only between file nodes that are in layers)
     const flowEdges: Edge[] = [];
     let edgeIdx = 0;
     for (const edge of graph.edges) {
@@ -537,9 +572,9 @@ function useFlowViewGraph() {
   ]);
 }
 
-// ── Main GraphView component ───────────────────────────────────────────
+// ── Main inner component (must be inside ReactFlowProvider) ────────────
 
-export default function GraphView() {
+function GraphViewInner() {
   const graph = useDashboardStore((s) => s.graph);
   const navigationLevel = useDashboardStore((s) => s.navigationLevel);
   const activeLayerId = useDashboardStore((s) => s.activeLayerId);
@@ -581,36 +616,17 @@ export default function GraphView() {
     return () => clearTimeout(timer);
   }, [navigationLevel, activeLayerId, viewMode, fitView]);
 
-  // Zoom-to-node when navigateToNode is called
-  const zoomToNodeId = useDashboardStore((s) => s.zoomToNodeId);
-  useEffect(() => {
-    if (zoomToNodeId) {
-      const timer = setTimeout(() => {
-        fitView({
-          nodes: [{ id: zoomToNodeId }],
-          duration: 400,
-          padding: 0.5,
-        });
-        useDashboardStore.setState({ zoomToNodeId: null });
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [zoomToNodeId, fitView]);
-
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {
       // In flow view, all clicks are selections (no drill-in)
-      // Ignore clicks on lane group nodes
       if (viewMode === "flow") {
         if (node.id.startsWith("lane:")) return;
         selectNode(node.id);
         return;
       }
       if (navigationLevel === "overview") {
-        // At overview, clicking a layer cluster drills in
         drillIntoLayer(node.id);
       } else if (node.id.startsWith("portal:")) {
-        // Portal nodes navigate to that layer
         const targetLayerId = node.id.replace("portal:", "");
         drillIntoLayer(targetLayerId);
       } else {
@@ -654,11 +670,15 @@ export default function GraphView() {
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        edgesFocusable={false}
+        edgesReconnectable={false}
+        elementsSelectable={false}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.05}
-        maxZoom={4}
-        panOnScroll
+        fitViewOptions={{ minZoom: 0.01, padding: 0.1 }}
+        minZoom={0.01}
+        maxZoom={2}
         colorMode="dark"
       >
         <Background
@@ -673,7 +693,17 @@ export default function GraphView() {
           maskColor="rgba(10,10,10,0.7)"
           className="!bg-surface !border !border-border-subtle"
         />
+        <TourFitView />
+        <SelectedNodeFitView />
       </ReactFlow>
     </div>
+  );
+}
+
+export default function GraphView() {
+  return (
+    <ReactFlowProvider>
+      <GraphViewInner />
+    </ReactFlowProvider>
   );
 }

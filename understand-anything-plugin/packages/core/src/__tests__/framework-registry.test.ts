@@ -81,6 +81,30 @@ describe("FrameworkRegistry", () => {
     });
   });
 
+  it("returns frameworks for all listed languages (cross-language)", () => {
+    const registry = FrameworkRegistry.createDefault();
+    // React lists both typescript and javascript
+    const tsFrameworks = registry.getForLanguage("typescript");
+    const jsFrameworks = registry.getForLanguage("javascript");
+    expect(tsFrameworks.some((f) => f.id === "react")).toBe(true);
+    expect(jsFrameworks.some((f) => f.id === "react")).toBe(true);
+  });
+
+  it("does not duplicate on re-registration", () => {
+    const registry = new FrameworkRegistry();
+    registry.register(djangoConfig);
+    registry.register(djangoConfig);
+    expect(registry.getForLanguage("python")).toHaveLength(1);
+  });
+
+  it("getForLanguage returns a copy, not the internal array", () => {
+    const registry = new FrameworkRegistry();
+    registry.register(djangoConfig);
+    const result = registry.getForLanguage("python");
+    result.push(reactConfig);
+    expect(registry.getForLanguage("python")).toHaveLength(1);
+  });
+
   describe("createDefault", () => {
     it("registers all 10 built-in framework configs", () => {
       const registry = FrameworkRegistry.createDefault();

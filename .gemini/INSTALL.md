@@ -1,28 +1,29 @@
-# Installing Understand-Anything for Codex
+# Installing Understand-Anything for Gemini CLI
 
 ## Prerequisites
 
 - Git
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) installed
 
 ## Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Lum1104/Understand-Anything.git ~/.codex/understand-anything
+   git clone https://github.com/Lum1104/Understand-Anything.git ~/.gemini/understand-anything
    ```
 
 2. **Create the skills symlinks:**
    ```bash
    mkdir -p ~/.agents/skills
-   # Note: if OpenCode's Understand-Anything is already installed, these symlinks
+   # Note: if another platform's Understand-Anything is already installed, these symlinks
    # already exist and the ln commands will safely fail — that is fine, the
-   # existing symlinks work for Codex too.
+   # existing symlinks work for Gemini CLI too.
    for skill in understand understand-chat understand-dashboard understand-diff understand-explain understand-onboard; do
-     ln -sf ~/.codex/understand-anything/understand-anything-plugin/skills/$skill ~/.agents/skills/$skill
+     ln -sf ~/.gemini/understand-anything/understand-anything-plugin/skills/$skill ~/.agents/skills/$skill
    done
    # Universal plugin root symlink — lets the dashboard skill find packages/dashboard/
    # Skip if already exists (e.g. another platform was installed first)
-   [ -e ~/.understand-anything-plugin ] || [ -L ~/.understand-anything-plugin ] || ln -s ~/.codex/understand-anything/understand-anything-plugin ~/.understand-anything-plugin
+   [ -e ~/.understand-anything-plugin ] || [ -L ~/.understand-anything-plugin ] || ln -s ~/.gemini/understand-anything/understand-anything-plugin ~/.understand-anything-plugin
    ```
 
    **Windows (PowerShell):**
@@ -30,13 +31,13 @@
    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
    $skills = @("understand","understand-chat","understand-dashboard","understand-diff","understand-explain","understand-onboard")
    foreach ($skill in $skills) {
-     cmd /c mklink /J "$env:USERPROFILE\.agents\skills\$skill" "$env:USERPROFILE\.codex\understand-anything\understand-anything-plugin\skills\$skill"
+     cmd /c mklink /J "$env:USERPROFILE\.agents\skills\$skill" "$env:USERPROFILE\.gemini\understand-anything\understand-anything-plugin\skills\$skill"
    }
    # Universal plugin root symlink
-   cmd /c mklink /J "$env:USERPROFILE\.understand-anything-plugin" "$env:USERPROFILE\.codex\understand-anything\understand-anything-plugin"
+   cmd /c mklink /J "$env:USERPROFILE\.understand-anything-plugin" "$env:USERPROFILE\.gemini\understand-anything\understand-anything-plugin"
    ```
 
-3. **Restart Codex** to discover the skills.
+3. **Restart Gemini CLI** to discover the skills.
 
 ## Verify
 
@@ -55,7 +56,7 @@ Skills activate automatically when relevant. You can also invoke directly:
 ## Updating
 
 ```bash
-cd ~/.codex/understand-anything && git pull
+cd ~/.gemini/understand-anything && git pull
 ```
 
 Skills update instantly through the symlinks.
@@ -67,5 +68,5 @@ for skill in understand understand-chat understand-dashboard understand-diff und
   rm -f ~/.agents/skills/$skill
 done
 rm ~/.understand-anything-plugin
-rm -rf ~/.codex/understand-anything
+rm -rf ~/.gemini/understand-anything
 ```

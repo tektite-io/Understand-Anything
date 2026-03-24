@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const fastapiConfig = {
   id: "fastapi",
   displayName: "FastAPI",
-  language: "python",
+  languages: ["python"],
   detectionKeywords: ["fastapi", "uvicorn", "starlette"],
   manifestFiles: [
     "requirements.txt",

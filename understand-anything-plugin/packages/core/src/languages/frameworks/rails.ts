@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const railsConfig = {
   id: "rails",
   displayName: "Ruby on Rails",
-  language: "ruby",
+  languages: ["ruby"],
   detectionKeywords: [
     "rails",
     "railties",

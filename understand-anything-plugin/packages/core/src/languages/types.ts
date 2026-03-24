@@ -1,18 +1,13 @@
 import { z } from "zod";
 
-// Tree-sitter node type mappings for a language
+// Tree-sitter grammar configuration for a language.
+// Only wasmPackage and wasmFile are needed for grammar loading.
+// The extraction logic in tree-sitter-plugin.ts is currently TS/JS-specific;
+// when grammars for other languages are added, language-specific extractors
+// should be registered via the customAnalyzer escape hatch.
 export const TreeSitterConfigSchema = z.object({
   wasmPackage: z.string(),
   wasmFile: z.string(),
-  nodeTypes: z.object({
-    function: z.array(z.string()),
-    class: z.array(z.string()),
-    import: z.array(z.string()),
-    export: z.array(z.string()),
-    call: z.array(z.string()),
-    string: z.array(z.string()),
-    parameter: z.array(z.string()),
-  }),
 });
 
 export type TreeSitterConfig = z.infer<typeof TreeSitterConfigSchema>;
@@ -43,7 +38,7 @@ export type LanguageConfig = z.infer<typeof LanguageConfigSchema>;
 export const FrameworkConfigSchema = z.object({
   id: z.string().min(1),
   displayName: z.string().min(1),
-  language: z.string().min(1),
+  languages: z.array(z.string().min(1)).min(1),
   detectionKeywords: z.array(z.string()).min(1),
   manifestFiles: z.array(z.string()).min(1),
   promptSnippetPath: z.string().min(1),

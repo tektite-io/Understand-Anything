@@ -3,8 +3,8 @@ import type { FrameworkConfig } from "../types.js";
 export const nextjsConfig = {
   id: "nextjs",
   displayName: "Next.js",
-  language: "typescript",
-  detectionKeywords: ["next", "@next/font", "@next/image"],
+  languages: ["typescript", "javascript"],
+  detectionKeywords: ["\"next\":", "@next/font", "@next/image"],
   manifestFiles: ["package.json"],
   promptSnippetPath: "./frameworks/nextjs.md",
   entryPoints: [

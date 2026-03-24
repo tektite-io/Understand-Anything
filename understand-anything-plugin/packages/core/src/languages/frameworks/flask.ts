@@ -3,7 +3,7 @@ import type { FrameworkConfig } from "../types.js";
 export const flaskConfig = {
   id: "flask",
   displayName: "Flask",
-  language: "python",
+  languages: ["python"],
   detectionKeywords: [
     "flask",
     "flask-restful",
