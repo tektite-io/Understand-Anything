@@ -98,6 +98,9 @@ An interactive web dashboard opens with your codebase visualized as a graph — 
 
 # Generate an onboarding guide for new team members
 /understand-onboard
+
+# Extract business domain knowledge (domains, flows, steps)
+/understand-domain
 ```
 
 ---
@@ -231,6 +234,16 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
       <p>12 programming patterns (generics, closures, decorators, etc.) explained in context wherever they appear.</p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏢 Business Domain Knowledge</h3>
+      <p>Extract business domains, flows, and process steps from your codebase. See how business logic maps to code with an interactive horizontal flow graph — domains contain flows, flows contain steps.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🔀 Structural + Domain Views</h3>
+      <p>Toggle between the structural code graph and the business domain graph in the dashboard. Understand both how the code is organized and what business processes it implements.</p>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -239,7 +252,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 ### Multi-Agent Pipeline
 
-The `/understand` command orchestrates 5 specialized agents:
+The `/understand` command orchestrates 5 specialized agents, and `/understand-domain` adds a 6th:
 
 | Agent | Role |
 |-------|------|
@@ -248,6 +261,7 @@ The `/understand` command orchestrates 5 specialized agents:
 | `architecture-analyzer` | Identify architectural layers |
 | `tour-builder` | Generate guided learning tours |
 | `graph-reviewer` | Validate graph completeness and referential integrity (runs inline by default; use `--review` for full LLM review) |
+| `domain-analyzer` | Extract business domains, flows, and process steps (used by `/understand-domain`) |
 
 File analyzers run in parallel (up to 5 concurrent, 20-30 files per batch). Supports incremental updates — only re-analyzes files that changed since the last run.
 

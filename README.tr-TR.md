@@ -98,6 +98,9 @@ Kod tabanın bir grafik olarak görselleştirilmiş, mimari katmana göre renkle
 
 # Yeni ekip üyeleri için bir işe alıştırma rehberi oluştur
 /understand-onboard
+
+# İş alanı bilgisini çıkar (alanlar, akışlar, adımlar)
+/understand-domain
 ```
 
 ---
@@ -231,6 +234,16 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
       <p>12 programlama deseni (generikler, kapanışlar, dekoratörler, vb.) göründükleri her yerde bağlam içinde açıklanır.</p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏢 İş Alanı Bilgisi</h3>
+      <p>Kod tabanından iş alanları, akışlar ve işlem adımları çıkar. Etkileşimli yatay akış grafiğiyle iş mantığının koda nasıl eşlendiğini gör — alanlar akışları, akışlar adımları içerir.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🔀 Yapısal + Alan Görünümleri</h3>
+      <p>Kontrol panelinde yapısal kod grafiği ile iş alanı grafiği arasında geçiş yap. Hem kodun nasıl organize edildiğini hem de hangi iş süreçlerini uyguladığını anla.</p>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -239,7 +252,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 ### Çok-Ajan Hattı
 
-`/understand` komutu 5 özel ajan düzenler:
+`/understand` komutu 5 özel ajan düzenler ve `/understand-domain` 6. ajanı ekler:
 
 | Ajan | Rol |
 |-------|------|
@@ -248,6 +261,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 | `architecture-analyzer` | Mimari katmanları tanımla |
 | `tour-builder` | Rehberli öğrenme turları oluştur |
 | `graph-reviewer` | Grafik bütünlüğünü ve referans bütünlüğünü doğrula |
+| `domain-analyzer` | İş alanları, akışlar ve işlem adımlarını çıkar (`/understand-domain` tarafından kullanılır) |
 
 Dosya analizörleri paralel çalışır (en fazla 3 eşzamanlı). Artımlı güncellemeleri destekler — yalnızca son çalıştırmadan bu yana değişen dosyaları yeniden analiz eder.
 

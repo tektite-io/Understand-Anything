@@ -97,6 +97,9 @@ Understand Anything 透過結合**大型語言模型（LLM）**與**靜態程式
 
 # 為新團隊成員產生指南
 /understand-onboard
+
+# 提取業務領域知識（領域、流程、步驟）
+/understand-domain
 ```
 
 ---
@@ -230,6 +233,16 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
       <p>12 種程式設計模式（泛型、閉包、裝飾器等）將在上下文中逐一解釋。</p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏢 業務領域知識</h3>
+      <p>從程式碼庫中提取業務領域、流程和處理步驟。透過互動式水平流程圖查看業務邏輯如何對應到程式碼 — 領域包含流程，流程包含步驟。</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🔀 結構 + 領域雙視圖</h3>
+      <p>在資料看板中切換程式碼結構圖和業務領域圖。同時理解程式碼的組織方式和它實現的業務流程。</p>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -238,7 +251,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 
 ### 多智能體架構
 
-`/understand` 指令呼叫 5 個 agent：
+`/understand` 指令呼叫 5 個 agent，`/understand-domain` 額外增加第 6 個：
 
 | Agent | 職責 |
 |-------|------|
@@ -247,6 +260,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 | `architecture-analyzer` | 識別架構層 |
 | `tour-builder` | 產生引導式學習路徑 |
 | `graph-reviewer` | 驗證圖的完整性和參考完整性 |
+| `domain-analyzer` | 提取業務領域、流程和處理步驟（由 `/understand-domain` 使用） |
 
 檔案分析器並行執行（最多 3 個並發）。支援增量更新 — 僅重新分析自上次執行以來發生變更的檔案。
 
