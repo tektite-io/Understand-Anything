@@ -21,6 +21,11 @@ const typeColors: Record<NodeType, string> = {
   domain: "var(--color-node-concept)",
   flow: "var(--color-node-pipeline)",
   step: "var(--color-node-function)",
+  article: "var(--color-node-article)",
+  entity: "var(--color-node-entity)",
+  topic: "var(--color-node-topic)",
+  claim: "var(--color-node-claim)",
+  source: "var(--color-node-source)",
 };
 
 const typeTextColors: Record<NodeType, string> = {
@@ -40,6 +45,11 @@ const typeTextColors: Record<NodeType, string> = {
   domain: "text-node-concept",
   flow: "text-node-pipeline",
   step: "text-node-function",
+  article: "text-node-article",
+  entity: "text-node-entity",
+  topic: "text-node-topic",
+  claim: "text-node-claim",
+  source: "text-node-source",
 };
 
 const complexityColors: Record<string, string> = {

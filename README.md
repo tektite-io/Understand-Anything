@@ -1,13 +1,23 @@
 <h1 align="center">Understand Anything</h1>
 
 <p align="center">
-  <strong>Turn any codebase, Dockerfile, or docs into an interactive knowledge graph you can explore, search, and ask questions about.</strong>
+  <strong>Turn any codebase, knowledge base, or docs into an interactive knowledge graph you can explore, search, and ask questions about.</strong>
   <br />
   <em>Works with Claude Code, Codex, Cursor, Copilot, Gemini CLI, and more.</em>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+</p>
+
+<p align="center">
+ <a href="https://www.star-history.com/lum1104/understand-anything">
+  <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+  </picture>
+ </a>
 </p>
 
 <p align="center">
@@ -54,6 +64,10 @@ Switch to the domain view and see how your code maps to real business processes 
 <p align="center">
   <img src="assets/overview-domain.gif" alt="Domain graph — business domains, flows, and process steps" width="750" />
 </p>
+
+### Analyze knowledge bases
+
+Point `/understand-knowledge` at a [Karpathy-pattern LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and get a force-directed knowledge graph with community clustering. The deterministic parser extracts wikilinks and categories from `index.md`, then LLM agents discover implicit relationships, extract entities, and surface claims — turning your wiki into a navigable graph of interconnected ideas.
 
 <table>
   <tr>
@@ -132,6 +146,9 @@ An interactive web dashboard opens with your codebase visualized as a graph — 
 
 # Extract business domain knowledge (domains, flows, steps)
 /understand-domain
+
+# Analyze a Karpathy-pattern LLM wiki knowledge base
+/understand-knowledge ~/path/to/wiki
 ```
 
 ---
@@ -232,6 +249,7 @@ The `/understand` command orchestrates 5 specialized agents, and `/understand-do
 | `tour-builder` | Generate guided learning tours |
 | `graph-reviewer` | Validate graph completeness and referential integrity (runs inline by default; use `--review` for full LLM review) |
 | `domain-analyzer` | Extract business domains, flows, and process steps (used by `/understand-domain`) |
+| `article-analyzer` | Extract entities, claims, and implicit relationships from wiki articles (used by `/understand-knowledge`) |
 
 File analyzers run in parallel (up to 5 concurrent, 20-30 files per batch). Supports incremental updates — only re-analyzes files that changed since the last run.
 

@@ -1,12 +1,22 @@
 <h1 align="center">Understand Anything</h1>
 <p align="center">
-  <strong>将任意代码库、Dockerfile 或文档转化为可探索、可搜索、可对话的交互式知识图谱</strong>
+  <strong>将任意代码库、知识库或文档转化为可探索、可搜索、可对话的交互式知识图谱</strong>
   <br />
   <em>支持 Claude Code、Codex、Cursor、Copilot、Gemini CLI 等多平台。</em>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+</p>
+
+<p align="center">
+ <a href="https://www.star-history.com/lum1104/understand-anything">
+  <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+  </picture>
+ </a>
 </p>
 
 <p align="center">
@@ -53,6 +63,10 @@ Understand Anything 是一个基于 [Claude Code](https://docs.anthropic.com/en/
 <p align="center">
   <img src="assets/overview-domain.gif" alt="领域图——业务领域、流程和处理步骤" width="750" />
 </p>
+
+### 分析知识库
+
+将 `/understand-knowledge` 指向一个 [Karpathy 模式的 LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)，即可获得带有社区聚类的力导向知识图谱。确定性解析器从 `index.md` 中提取 wikilinks 和分类，然后 LLM 代理发现隐式关系、提取实体并挖掘论断——将你的 wiki 转化为可导航的互联思想图谱。
 
 <table>
   <tr>
@@ -131,6 +145,9 @@ Understand Anything 是一个基于 [Claude Code](https://docs.anthropic.com/en/
 
 # 提取业务领域知识（领域、流程、步骤）
 /understand-domain
+
+# 分析 Karpathy 模式的 LLM Wiki 知识库
+/understand-knowledge ~/path/to/wiki
 ```
 
 ---
@@ -231,6 +248,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 | `tour-builder` | 生成引导式学习路径 |
 | `graph-reviewer` | 验证图的完整性和引用完整性 |
 | `domain-analyzer` | 提取业务领域、流程和处理步骤（由 `/understand-domain` 使用） |
+| `article-analyzer` | 从 wiki 文章中提取实体、论断和隐式关系（由 `/understand-knowledge` 使用） |
 
 文件分析器并行运行（最多 3 个并发）。支持增量更新 — 仅重新分析自上次运行以来发生更改的文件。
 

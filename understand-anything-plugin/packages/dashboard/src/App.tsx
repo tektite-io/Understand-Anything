@@ -4,6 +4,7 @@ import type { GraphIssue } from "@understand-anything/core/schema";
 import { useDashboardStore } from "./store";
 import GraphView from "./components/GraphView";
 import DomainGraphView from "./components/DomainGraphView";
+import KnowledgeGraphView from "./components/KnowledgeGraphView";
 import CodeViewer from "./components/CodeViewer";
 import SearchBar from "./components/SearchBar";
 import NodeInfo from "./components/NodeInfo";
@@ -104,6 +105,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
   const [metaTheme, setMetaTheme] = useState<ThemeConfig | null>(null);
   const viewMode = useDashboardStore((s) => s.viewMode);
   const setViewMode = useDashboardStore((s) => s.setViewMode);
+  const isKnowledgeGraph = useDashboardStore((s) => s.isKnowledgeGraph);
   const domainGraph = useDashboardStore((s) => s.domainGraph);
   const setDomainGraph = useDashboardStore((s) => s.setDomainGraph);
 
@@ -240,6 +242,11 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         if (result.success && result.data) {
           setGraph(result.data);
           setGraphIssues(result.issues);
+          // Auto-detect knowledge graph kind
+          if ((data as Record<string, unknown>).kind === "knowledge") {
+            setViewMode("knowledge");
+            useDashboardStore.getState().setIsKnowledgeGraph(true);
+          }
           for (const issue of result.issues) {
             if (issue.level === "auto-corrected") {
               console.warn(`[graph] auto-corrected: ${issue.message}`);
@@ -331,7 +338,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
           </h1>
           <div className="w-px h-5 bg-border-subtle" />
           <PersonaSelector />
-          {graph && domainGraph && (
+          {graph && !isKnowledgeGraph && domainGraph && (
             <>
               <div className="w-px h-5 bg-border-subtle" />
               <div className="flex items-center bg-elevated rounded-lg p-0.5">
@@ -369,14 +376,17 @@ function Dashboard({ accessToken }: { accessToken: string }) {
           <div className="flex items-center gap-4 w-max">
             <DiffToggle />
             <div className="flex items-center gap-1">
-              {([
-                { key: "code", label: "Code", color: "var(--color-node-file)" },
-                { key: "config", label: "Config", color: "var(--color-node-config)" },
-                { key: "docs", label: "Docs", color: "var(--color-node-document)" },
-                { key: "infra", label: "Infra", color: "var(--color-node-service)" },
-                { key: "data", label: "Data", color: "var(--color-node-table)" },
-                { key: "domain", label: "Domain", color: "var(--color-node-concept)" },
-              ] as const).map((cat) => (
+              {(isKnowledgeGraph ? [
+                { key: "knowledge" as const, label: "All", color: "var(--color-node-article)" },
+              ] : [
+                { key: "code" as const, label: "Code", color: "var(--color-node-file)" },
+                { key: "config" as const, label: "Config", color: "var(--color-node-config)" },
+                { key: "docs" as const, label: "Docs", color: "var(--color-node-document)" },
+                { key: "infra" as const, label: "Infra", color: "var(--color-node-service)" },
+                { key: "data" as const, label: "Data", color: "var(--color-node-table)" },
+                { key: "domain" as const, label: "Domain", color: "var(--color-node-concept)" },
+                { key: "knowledge" as const, label: "Knowledge", color: "var(--color-node-article)" },
+              ]).map((cat) => (
                 <button
                   key={cat.key}
                   onClick={() => toggleNodeTypeFilter(cat.key)}
@@ -468,7 +478,9 @@ function Dashboard({ accessToken }: { accessToken: string }) {
       <div className="flex-1 flex min-h-0 relative">
         {/* Graph area */}
         <div className="flex-1 min-w-0 min-h-0 relative">
-          {viewMode === "domain" && domainGraph ? (
+          {viewMode === "knowledge" ? (
+            <KnowledgeGraphView />
+          ) : viewMode === "domain" && domainGraph ? (
             <DomainGraphView />
           ) : (
             <GraphView />

@@ -20,6 +20,11 @@ const typeBadgeColors: Record<NodeType, string> = {
   domain: "text-node-concept border border-node-concept/30 bg-node-concept/10",
   flow: "text-node-pipeline border border-node-pipeline/30 bg-node-pipeline/10",
   step: "text-node-function border border-node-function/30 bg-node-function/10",
+  article: "text-node-article border border-node-article/30 bg-node-article/10",
+  entity: "text-node-entity border border-node-entity/30 bg-node-entity/10",
+  topic: "text-node-topic border border-node-topic/30 bg-node-topic/10",
+  claim: "text-node-claim border border-node-claim/30 bg-node-claim/10",
+  source: "text-node-source border border-node-source/30 bg-node-source/10",
 };
 
 const complexityBadgeColors: Record<string, string> = {
@@ -62,6 +67,12 @@ const EDGE_LABELS: Record<EdgeType, { forward: string; backward: string }> = {
   contains_flow: { forward: "contains flow", backward: "flow in" },
   flow_step: { forward: "flow step", backward: "step of" },
   cross_domain: { forward: "cross-domain to", backward: "cross-domain from" },
+  cites: { forward: "cites", backward: "cited by" },
+  contradicts: { forward: "contradicts", backward: "contradicted by" },
+  builds_on: { forward: "builds on", backward: "built upon by" },
+  exemplifies: { forward: "exemplifies", backward: "exemplified by" },
+  categorized_under: { forward: "categorized under", backward: "categorizes" },
+  authored_by: { forward: "authored by", backward: "authored" },
 };
 
 /**
@@ -76,6 +87,97 @@ function getDirectionalLabel(edgeType: string, isSource: boolean): string {
     return isSource ? formatted : `${formatted} (reverse)`;
   }
   return isSource ? labels.forward : labels.backward;
+}
+
+function KnowledgeNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeGraph }) {
+  const navigateToNode = useDashboardStore((s) => s.navigateToNode);
+  const meta = node.knowledgeMeta;
+
+  // Wikilinks (outgoing related edges)
+  const wikilinks = graph.edges
+    .filter((e) => e.type === "related" && e.source === node.id)
+    .map((e) => graph.nodes.find((n) => n.id === e.target))
+    .filter((n): n is GraphNode => n !== undefined);
+
+  // Backlinks (incoming related edges)
+  const backlinks = graph.edges
+    .filter((e) => e.type === "related" && e.target === node.id)
+    .map((e) => graph.nodes.find((n) => n.id === e.source))
+    .filter((n): n is GraphNode => n !== undefined);
+
+  // Category
+  const categoryEdge = graph.edges.find(
+    (e) => e.type === "categorized_under" && e.source === node.id
+  );
+  const categoryNode = categoryEdge
+    ? graph.nodes.find((n) => n.id === categoryEdge.target)
+    : null;
+
+  return (
+    <div className="space-y-3">
+      {categoryNode && (
+        <div>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Category</h4>
+          <button
+            type="button"
+            onClick={() => navigateToNode(categoryNode.id)}
+            className="text-[11px] px-2 py-0.5 rounded bg-elevated text-accent hover:text-accent-bright transition-colors"
+          >
+            {categoryNode.name}
+          </button>
+        </div>
+      )}
+      {meta?.wikilinks && meta.wikilinks.length > 0 && (
+        <div>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+            Wikilinks ({wikilinks.length})
+          </h4>
+          <div className="space-y-1 max-h-[200px] overflow-auto">
+            {wikilinks.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => navigateToNode(n.id)}
+                className="block w-full text-left px-2 py-1.5 rounded bg-elevated hover:bg-accent/10 text-[11px] text-text-secondary hover:text-accent transition-colors truncate"
+              >
+                {n.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {backlinks.length > 0 && (
+        <div>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+            Backlinks ({backlinks.length})
+          </h4>
+          <div className="space-y-1 max-h-[200px] overflow-auto">
+            {backlinks.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => navigateToNode(n.id)}
+                className="block w-full text-left px-2 py-1.5 rounded bg-elevated hover:bg-accent/10 text-[11px] text-text-secondary hover:text-accent transition-colors truncate"
+              >
+                {n.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {meta?.content && (
+        <div>
+          <h4 className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Preview</h4>
+          <div className="text-[11px] text-text-secondary leading-relaxed bg-elevated rounded-lg p-3 max-h-[300px] overflow-auto whitespace-pre-wrap font-mono">
+            {meta.content.slice(0, 1500)}
+            {meta.content.length > 1500 && (
+              <span className="text-text-muted">... (truncated)</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DomainNodeDetails({ node, graph }: { node: GraphNode; graph: KnowledgeGraph }) {
@@ -378,6 +480,11 @@ export default function NodeInfo() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Knowledge-specific details */}
+      {activeGraph && node && (node.type === "article" || node.type === "entity" || node.type === "topic" || node.type === "claim" || node.type === "source") && (
+        <KnowledgeNodeDetails node={node} graph={activeGraph} />
       )}
 
       {/* Domain-specific details */}

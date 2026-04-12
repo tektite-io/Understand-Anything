@@ -9,10 +9,10 @@ import type { ReactFlowInstance } from "@xyflow/react";
 
 export type Persona = "non-technical" | "junior" | "experienced";
 export type NavigationLevel = "overview" | "layer-detail";
-export type NodeType = "file" | "function" | "class" | "module" | "concept" | "config" | "document" | "service" | "table" | "endpoint" | "pipeline" | "schema" | "resource" | "domain" | "flow" | "step";
+export type NodeType = "file" | "function" | "class" | "module" | "concept" | "config" | "document" | "service" | "table" | "endpoint" | "pipeline" | "schema" | "resource" | "domain" | "flow" | "step" | "article" | "entity" | "topic" | "claim" | "source";
 export type Complexity = "simple" | "moderate" | "complex";
-export type EdgeCategory = "structural" | "behavioral" | "data-flow" | "dependencies" | "semantic" | "infrastructure" | "domain";
-export type ViewMode = "structural" | "domain";
+export type EdgeCategory = "structural" | "behavioral" | "data-flow" | "dependencies" | "semantic" | "infrastructure" | "domain" | "knowledge";
+export type ViewMode = "structural" | "domain" | "knowledge";
 
 export interface FilterState {
   nodeTypes: Set<NodeType>;
@@ -21,9 +21,9 @@ export interface FilterState {
   edgeCategories: Set<EdgeCategory>;
 }
 
-export const ALL_NODE_TYPES: NodeType[] = ["file", "function", "class", "module", "concept", "config", "document", "service", "table", "endpoint", "pipeline", "schema", "resource", "domain", "flow", "step"];
+export const ALL_NODE_TYPES: NodeType[] = ["file", "function", "class", "module", "concept", "config", "document", "service", "table", "endpoint", "pipeline", "schema", "resource", "domain", "flow", "step", "article", "entity", "topic", "claim", "source"];
 export const ALL_COMPLEXITIES: Complexity[] = ["simple", "moderate", "complex"];
-export const ALL_EDGE_CATEGORIES: EdgeCategory[] = ["structural", "behavioral", "data-flow", "dependencies", "semantic", "infrastructure", "domain"];
+export const ALL_EDGE_CATEGORIES: EdgeCategory[] = ["structural", "behavioral", "data-flow", "dependencies", "semantic", "infrastructure", "domain", "knowledge"];
 
 export const EDGE_CATEGORY_MAP: Record<EdgeCategory, string[]> = {
   structural: ["imports", "exports", "contains", "inherits", "implements"],
@@ -33,6 +33,7 @@ export const EDGE_CATEGORY_MAP: Record<EdgeCategory, string[]> = {
   semantic: ["related", "similar_to"],
   infrastructure: ["deploys", "serves", "provisions", "triggers", "migrates", "documents", "routes", "defines_schema"],
   domain: ["contains_flow", "flow_step", "cross_domain"],
+  knowledge: ["cites", "contradicts", "builds_on", "exemplifies", "categorized_under", "authored_by"],
 };
 
 export const DOMAIN_EDGE_TYPES = EDGE_CATEGORY_MAP.domain;
@@ -45,7 +46,7 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 /** Categories used for node type filter toggles. Single source of truth for NodeCategory. */
-export type NodeCategory = "code" | "config" | "docs" | "infra" | "data" | "domain";
+export type NodeCategory = "code" | "config" | "docs" | "infra" | "data" | "domain" | "knowledge";
 
 /** Find which layer a node belongs to. Returns layerId or null. */
 function findNodeLayer(graph: KnowledgeGraph, nodeId: string): string | null {
@@ -133,13 +134,15 @@ interface DashboardStore {
   nextTourStep: () => void;
   prevTourStep: () => void;
 
-  // Domain view
+  // View mode
   viewMode: ViewMode;
+  isKnowledgeGraph: boolean;
   domainGraph: KnowledgeGraph | null;
   activeDomainId: string | null;
 
   setDomainGraph: (graph: KnowledgeGraph) => void;
   setViewMode: (mode: ViewMode) => void;
+  setIsKnowledgeGraph: (value: boolean) => void;
   navigateToDomain: (domainId: string) => void;
   clearActiveDomain: () => void;
 }
@@ -197,7 +200,7 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
   pathFinderOpen: false,
   reactFlowInstance: null,
 
-  nodeTypeFilters: { code: true, config: true, docs: true, infra: true, data: true, domain: true },
+  nodeTypeFilters: { code: true, config: true, docs: true, infra: true, data: true, domain: true, knowledge: true },
 
   toggleNodeTypeFilter: (category) =>
     set((state) => ({
@@ -464,11 +467,16 @@ export const useDashboardStore = create<DashboardStore>()((set, get) => ({
   },
 
   viewMode: "structural",
+  isKnowledgeGraph: false,
   domainGraph: null,
   activeDomainId: null,
 
   setDomainGraph: (graph) => {
     set({ domainGraph: graph });
+  },
+
+  setIsKnowledgeGraph: (value) => {
+    set({ isKnowledgeGraph: value });
   },
 
   setViewMode: (mode) => {

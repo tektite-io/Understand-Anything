@@ -1,13 +1,23 @@
 <h1 align="center">Understand Anything</h1>
 
 <p align="center">
-  <strong>あらゆるコードベース、Dockerfile、ドキュメントを、探索・検索・質問ができるインタラクティブなナレッジグラフに変換します。</strong>
+  <strong>あらゆるコードベース、ナレッジベース、ドキュメントを、探索・検索・質問ができるインタラクティブなナレッジグラフに変換します。</strong>
   <br />
   <em>Claude Code、Codex、Cursor、Copilot、Gemini CLI など、マルチプラットフォーム対応。</em>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.tr-TR.md">Türkçe</a>
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.ja-JP.md">日本語</a> | <a href="README.ko-KR.md">한국어</a> | <a href="README.es-ES.md">Español</a> | <a href="README.tr-TR.md">Türkçe</a>
+</p>
+
+<p align="center">
+ <a href="https://www.star-history.com/lum1104/understand-anything">
+  <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+   <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=Lum1104/Understand-Anything" />
+  </picture>
+ </a>
 </p>
 
 <p align="center">
@@ -54,6 +64,10 @@ Understand Anything は [Claude Code](https://docs.anthropic.com/en/docs/claude-
 <p align="center">
   <img src="assets/overview-domain.gif" alt="ドメイングラフ——ビジネスドメイン、フロー、プロセスステップ" width="750" />
 </p>
+
+### ナレッジベースを分析
+
+`/understand-knowledge` を [Karpathy パターンの LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) に向けると、コミュニティクラスタリング付きのフォースディレクテッドナレッジグラフが生成されます。決定論的パーサーが `index.md` から wikilinks とカテゴリを抽出し、LLM エージェントが暗黙の関係を発見、エンティティを抽出、主張を浮き彫りにして、wiki をナビゲート可能な相互接続されたアイデアのグラフに変換します。
 
 <table>
   <tr>
@@ -132,6 +146,9 @@ Understand Anything は [Claude Code](https://docs.anthropic.com/en/docs/claude-
 
 # ビジネスドメイン知識を抽出（ドメイン、フロー、ステップ）
 /understand-domain
+
+# Karpathy パターンの LLM Wiki ナレッジベースを分析
+/understand-knowledge ~/path/to/wiki
 ```
 
 ---
@@ -232,6 +249,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/Lum1104/Und
 | `tour-builder` | ガイド学習ツアーの生成 |
 | `graph-reviewer` | グラフの完全性と参照整合性の検証 |
 | `domain-analyzer` | ビジネスドメイン、フロー、処理ステップの抽出（`/understand-domain` で使用） |
+| `article-analyzer` | wiki 記事からエンティティ、主張、暗黙の関係を抽出（`/understand-knowledge` で使用） |
 
 ファイルアナライザーは並列実行されます（最大3つ同時）。インクリメンタル更新に対応しており、前回の実行から変更されたファイルのみを再分析します。
 
