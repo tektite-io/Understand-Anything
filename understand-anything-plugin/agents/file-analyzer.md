@@ -19,148 +19,39 @@ For each file in the batch provided to you, extract structural data via a script
 
 ---
 
-## Phase 1 -- Structural Extraction Script
+## Phase 1 -- Structural Extraction (Bundled Script)
 
-Write a script that reads each file in your batch and extracts deterministic structural information. Prefer Node.js for the script; fall back to Python if Node.js is unavailable. Avoid bash for complex extraction — it handles multiline patterns poorly.
+Execute the pre-built structural extraction script bundled with the Understand-Anything plugin. This script uses tree-sitter for code files and specialized parsers for non-code files, providing deterministic, high-quality structural extraction without writing any ad-hoc scripts.
 
-### Script Requirements
+### Step 1 — Prepare the input JSON
 
-1. **Accept** a JSON file path as the first argument. This JSON file contains:
-   ```json
-   {
-     "projectRoot": "/path/to/project",
-     "batchFiles": [
-       {"path": "src/index.ts", "language": "typescript", "sizeLines": 150, "fileCategory": "code"},
-       {"path": "README.md", "language": "markdown", "sizeLines": 45, "fileCategory": "docs"},
-       {"path": "Dockerfile", "language": "dockerfile", "sizeLines": 22, "fileCategory": "infra"}
-     ],
-     "batchImportData": {
-       "src/index.ts": ["src/utils.ts", "src/config.ts"],
-       "README.md": [],
-       "Dockerfile": []
-     }
-   }
-   ```
-2. **Write** results JSON to the path given as the second argument.
-3. **Exit 0** on success. **Exit 1** on fatal error (print error to stderr).
+Create the input file with the batch data. **IMPORTANT:** Use the batch index in ALL temp file paths to avoid collisions when multiple file-analyzer agents run concurrently.
 
-### What the Script Must Extract (Per File)
+```bash
+cat > $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json << 'ENDJSON'
+{
+  "projectRoot": "<project-root>",
+  "batchFiles": [<this batch's files including fileCategory>],
+  "batchImportData": <batchImportData JSON object — provided in your dispatch prompt>
+}
+ENDJSON
+```
 
-The extraction approach depends on the file's `fileCategory`:
+### Step 2 — Execute the bundled extraction script
 
-#### For `code` files:
+Run the bundled `extract-structure.mjs` script. The `<SKILL_DIR>` path is provided in your dispatch prompt.
 
-**Functions and Methods:**
-- Name, start line, end line, parameter names
-- Detection approach: match `function <name>`, `const <name> = (`, `<name>(` in class bodies, `def <name>`, `func <name>`, `fn <name>`, `pub fn <name>` as appropriate for the language
-- Include exported arrow functions and method definitions
+```bash
+node <SKILL_DIR>/extract-structure.mjs \
+  $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json \
+  $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json
+```
 
-**Classes, Interfaces, and Types:**
-- Name, start line, end line
-- Method names and property names within the class body
-- Detection approach: match `class <name>`, `interface <name>`, `type <name> =`, `struct <name>`, `trait <name>`, `impl <name>` as appropriate
+If the script exits non-zero, read stderr and report the error. Do NOT attempt to write a manual extraction script as fallback — the bundled script is the sole extraction path.
 
-**Imports:**
-- Do NOT extract imports in the script. Import resolution has already been performed by the project scanner.
-- The pre-resolved imports for each file are provided in `batchImportData` in the input JSON.
-- Do not include an `imports` field in the script output — import edges will be created in Phase 2 using `batchImportData` directly.
+### Step 3 — Read the extraction results
 
-**Exports:**
-- Exported names and their line numbers
-- Whether it is a default export, named export, or re-export
-
-**Basic Metrics:**
-- Total line count
-- Non-empty line count (lines that are not blank or comment-only)
-- Import count — use `batchImportData[file.path].length` from the input JSON (do not count from source)
-- Export count (number of export statements)
-- Function count, class count
-
-#### For `config` files (YAML, JSON, TOML, XML, .env, etc.):
-
-**Key Settings:**
-- Top-level keys/sections and their nesting depth
-- For YAML/JSON: extract top-level keys and one level of nesting
-- For `.env` files: extract variable names (not values)
-- For `tsconfig.json`, `package.json`: extract notable settings (compiler options, scripts, dependencies)
-
-**Services Referenced:**
-- Database connection strings (identify DB type, not credentials)
-- External service URLs or hostnames
-- Port numbers
-
-**Basic Metrics:**
-- Total line count, non-empty line count
-- Top-level key count
-
-#### For `docs` files (Markdown, RST, TXT):
-
-**Sections:**
-- Heading hierarchy (h1, h2, h3) with line numbers
-- For Markdown: extract `#` headings and their text
-
-**References:**
-- Code file references (paths mentioned in text or code blocks)
-- Links to other documentation files
-
-**Basic Metrics:**
-- Total line count, non-empty line count
-- Section count, code block count
-
-#### For `infra` files (Dockerfile, docker-compose, Terraform, Makefile, CI configs):
-
-**Services/Resources:**
-- For Dockerfile: base image, exposed ports, entry point command, build stages
-- For docker-compose: service names, images, ports, volume mounts, depends_on
-- For Terraform: resource types and names, provider names
-- For Makefile: target names
-- For CI configs (GitHub Actions, GitLab CI): job/workflow names, triggers
-
-**Steps/Stages:**
-- Build stages in Dockerfiles (FROM ... AS ...)
-- CI pipeline stages/jobs
-- Makefile targets and their dependencies
-
-**Basic Metrics:**
-- Total line count, non-empty line count
-- Stage count / job count / target count
-
-#### For `data` files (SQL, GraphQL, Protobuf, Prisma):
-
-**Definitions:**
-- For SQL: table names (CREATE TABLE), column names and types, foreign key relationships
-- For GraphQL: type definitions, query/mutation names, field lists
-- For Protobuf: message names, field names, service definitions
-- For Prisma: model names, field names, relations
-
-**Relationships:**
-- Foreign keys and references between tables/types
-- Service dependencies
-
-**Basic Metrics:**
-- Total line count, non-empty line count
-- Table/type/message count, field count
-
-#### For `script` files (shell, PowerShell, batch):
-
-Treat similarly to `code` files:
-- Extract function definitions (`function name()` or `name()` in bash)
-- Extract significant commands and pipeline operations
-- Basic metrics: total lines, non-empty lines, function count
-
-#### For `markup` files (HTML, CSS, SCSS):
-
-**Structural Elements:**
-- For HTML: major semantic elements (`<main>`, `<nav>`, `<header>`, `<footer>`), component references, script/link tags
-- For CSS/SCSS: selector patterns, media queries, CSS custom properties (variables)
-
-**Basic Metrics:**
-- Total line count, non-empty line count
-- Selector count (CSS) or element count (HTML)
-
-### Script Output Format
-
-The script must write this exact JSON structure to the output file:
+Read `$PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json`. The output format is:
 
 ```json
 {
@@ -181,8 +72,10 @@ The script must write this exact JSON structure to the output file:
         {"name": "App", "startLine": 50, "endLine": 140, "methods": ["init", "run"], "properties": ["config", "logger"]}
       ],
       "exports": [
-        {"name": "App", "line": 50, "isDefault": true},
-        {"name": "createApp", "line": 145, "isDefault": false}
+        {"name": "App", "line": 50, "isDefault": false}
+      ],
+      "callGraph": [
+        {"caller": "main", "callee": "initApp", "lineNumber": 15}
       ],
       "metrics": {
         "importCount": 5,
@@ -190,90 +83,12 @@ The script must write this exact JSON structure to the output file:
         "functionCount": 4,
         "classCount": 1
       }
-    },
-    {
-      "path": "README.md",
-      "language": "markdown",
-      "fileCategory": "docs",
-      "totalLines": 45,
-      "nonEmptyLines": 38,
-      "sections": [
-        {"heading": "Project Name", "level": 1, "line": 1},
-        {"heading": "Getting Started", "level": 2, "line": 10},
-        {"heading": "API Reference", "level": 2, "line": 25}
-      ],
-      "metrics": {
-        "sectionCount": 3,
-        "codeBlockCount": 2
-      }
-    },
-    {
-      "path": "Dockerfile",
-      "language": "dockerfile",
-      "fileCategory": "infra",
-      "totalLines": 22,
-      "nonEmptyLines": 18,
-      "services": [
-        {"name": "build", "type": "stage", "baseImage": "node:20-alpine"},
-        {"name": "production", "type": "stage", "baseImage": "node:20-alpine"}
-      ],
-      "resources": [
-        {"type": "port", "value": "3000"}
-      ],
-      "metrics": {
-        "stageCount": 2
-      }
-    },
-    {
-      "path": "schema.sql",
-      "language": "sql",
-      "fileCategory": "data",
-      "totalLines": 80,
-      "nonEmptyLines": 65,
-      "definitions": [
-        {"name": "users", "type": "table", "columns": ["id", "email", "name", "created_at"]},
-        {"name": "orders", "type": "table", "columns": ["id", "user_id", "total", "status"]}
-      ],
-      "metrics": {
-        "tableCount": 2,
-        "columnCount": 8
-      }
     }
   ]
 }
 ```
 
-- `scriptCompleted` (boolean) -- always `true` when the script finishes normally
-- `filesAnalyzed` (integer) -- count of files successfully processed
-- `filesSkipped` (string[]) -- files that could not be read (binary, permission error, etc.)
-- `results` (array) -- one entry per successfully analyzed file
-
-### Preparing the Script Input
-
-Before writing the script, create its input JSON file. **IMPORTANT:** Use the batch index in ALL temp file paths to avoid collisions when multiple file-analyzer agents run concurrently.
-
-```bash
-cat > $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json << 'ENDJSON'
-{
-  "projectRoot": "<project-root>",
-  "batchFiles": [<this batch's files including fileCategory>],
-  "batchImportData": <batchImportData JSON object — provided in your dispatch prompt>
-}
-ENDJSON
-```
-
-### Executing the Script
-
-After writing the script, execute it. **Use the batch index in every temp file path** — multiple file-analyzer agents run in parallel and must not overwrite each other's files:
-
-```bash
-# For Node.js scripts:
-node $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-<batchIndex>.js $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json
-# For Python scripts:
-python3 $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-<batchIndex>.py $PROJECT_ROOT/.understand-anything/tmp/ua-file-analyzer-input-<batchIndex>.json $PROJECT_ROOT/.understand-anything/tmp/ua-file-extract-results-<batchIndex>.json
-```
-
-If the script exits with a non-zero code, read stderr, diagnose the issue, fix the script, and re-run. You have up to 2 retry attempts.
+**Supported file categories:** The bundled script handles all file categories — `code` (10 languages with tree-sitter: TypeScript, JavaScript, Python, Go, Rust, Java, Ruby, PHP, C/C++, C#), `config`, `docs`, `infra`, `data`, `script`, and `markup`. For languages without tree-sitter support (Swift, Kotlin), the script outputs basic metrics with empty structural data — use your judgment to supplement from source file reading if needed.
 
 ---
 
