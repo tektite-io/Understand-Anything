@@ -345,11 +345,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
     </>
   );
 
-  const sidebarContent = codeViewerOpen ? (
-    <Suspense fallback={null}>
-      <CodeViewer accessToken={accessToken} onExpand={expandCodeViewer} />
-    </Suspense>
-  ) : (
+  const sidebarContent = (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex items-center gap-1 p-2 border-b border-border-subtle bg-surface shrink-0">
         {(["info", "files"] as const).map((tab) => (
@@ -367,7 +363,7 @@ function Dashboard({ accessToken }: { accessToken: string }) {
           </button>
         ))}
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-auto">
         {sidebarTab === "files" ? <FileExplorer /> : infoSidebarContent}
       </div>
     </div>
@@ -538,9 +534,18 @@ function Dashboard({ accessToken }: { accessToken: string }) {
         </div>
 
         {/* Right sidebar */}
-        <aside className="w-[360px] shrink-0 bg-surface border-l border-border-subtle overflow-hidden">
+        <aside className="w-[360px] shrink-0 bg-surface border-l border-border-subtle overflow-auto">
           {sidebarContent}
         </aside>
+
+        {/* Code viewer slide-up overlay (collapsed state) */}
+        {codeViewerOpen && !codeViewerExpanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-surface border-t border-border-subtle animate-slide-up z-20 overflow-hidden">
+            <Suspense fallback={null}>
+              <CodeViewer accessToken={accessToken} onExpand={expandCodeViewer} />
+            </Suspense>
+          </div>
+        )}
       </div>
 
       {/* Expanded code viewer modal */}

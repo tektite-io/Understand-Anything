@@ -67,7 +67,12 @@ export default function CodeViewer({
   const codeViewerNodeId = useDashboardStore((s) => s.codeViewerNodeId);
   const closeCodeViewer = useDashboardStore((s) => s.closeCodeViewer);
   const activeGraph = viewMode === "domain" && domainGraph ? domainGraph : graph;
-  const node = activeGraph?.nodes.find((n) => n.id === codeViewerNodeId) ?? null;
+  // Files tab always builds its tree from the structural graph, so a node ID opened from
+  // there may not exist in the active (domain) graph — fall back to the structural graph.
+  const node =
+    activeGraph?.nodes.find((n) => n.id === codeViewerNodeId) ??
+    graph?.nodes.find((n) => n.id === codeViewerNodeId) ??
+    null;
   const [state, setState] = useState<SourceState>({
     status: "idle",
     source: null,
